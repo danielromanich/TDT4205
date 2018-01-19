@@ -1,0 +1,1 @@
+/usr/bin/cc -g  -Wl,--enable-auto-import CMakeFiles/Pencil.dir/pencil.c.o CMakeFiles/Pencil.dir/scanner.c.o  -o Pencil.exe -Wl,--out-implib,libPencil.dll.a -Wl,--major-image-version,0,--minor-image-version,0 

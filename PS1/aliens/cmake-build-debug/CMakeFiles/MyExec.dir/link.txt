@@ -1,0 +1,1 @@
+/usr/bin/cc -g  -Wl,--enable-auto-import CMakeFiles/MyExec.dir/pencil.c.o CMakeFiles/MyExec.dir/scanner.c.o  -o MyExec.exe -Wl,--out-implib,libMyExec.dll.a -Wl,--major-image-version,0,--minor-image-version,0 

@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/cygdrive/f/Skole/Fag/TDT4205/PS1/aliens/pencil.c
+stdlib.h
+-
+stdint.h
+-
+math.h
+-
+pencil.h
+/cygdrive/f/Skole/Fag/TDT4205/PS1/aliens/pencil.h
+
+/cygdrive/f/Skole/Fag/TDT4205/PS1/aliens/pencil.h
+stdio.h
+-
+
+/cygdrive/f/Skole/Fag/TDT4205/PS1/aliens/scanner.c
+stdlib.h
+-
+stdint.h
+-
+string.h
+-
+ctype.h
+-
+pencil.h
+/cygdrive/f/Skole/Fag/TDT4205/PS1/aliens/pencil.h
+
