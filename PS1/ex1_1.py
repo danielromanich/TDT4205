@@ -12,7 +12,7 @@ out_file2 = open('aliens.txt', 'w')
 ## within the inverted commas
 ##
 
-regexr = '(\Bito)'  # input the appropriate regular expression here
+regexr = '[A-Za-z]*((e+n*)|((r|v|q|c|n)+u*i+))t+o+s*$'  # input the appropriate regular expression here
 rhyme = re.compile(regexr)
 
 filepath = 'parody_verse.txt'
