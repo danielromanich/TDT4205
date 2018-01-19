@@ -25,9 +25,7 @@ stdlib.h
 -
 stdint.h
 -
-string.h
--
-ctype.h
+stdio.h
 -
 pencil.h
 /cygdrive/f/Skole/Fag/TDT4205/PS1/aliens/pencil.h

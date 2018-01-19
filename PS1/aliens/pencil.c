@@ -24,7 +24,7 @@ void
 move(void) {
     x += step * cos((angle * M_PI) / (double) 180);
     y -= step * sin((angle * M_PI) / (double) 180);
-    printf("%d %d moveto\n", x, y);
+    //printf("%d %d moveto\n", x, y);
 }
 
 
@@ -32,8 +32,8 @@ void
 draw(void) {
     x += step * cos(angle * (M_PI / (double) 180));
     y -= step * sin(angle * (M_PI / (double) 180));
-    printf("%d %d lineto\n stroke\n", x, y);
-    printf("%d %d moveto\n", x, y);
+    //printf("%d %d lineto\n stroke\n", x, y);
+    //printf("%d %d moveto\n", x, y);
 }
 
 
@@ -130,7 +130,7 @@ emit_instruction(command_t word) {
         case STOP:
             break;
         default:
-            fprintf(stderr, "Unknown command; this should not happen!\n");
+            //fprintf(stderr, "Unknown command; this should not happen!\n");
             break;
     }
 }
@@ -151,11 +151,15 @@ main(int argc, char **argv) {
     // here will be discarded in the first iteration) 
     command_t c = FOUR;
 
+    c = next(NULL);     // Read until we have a token
+    printf("%d\n", (int) c);
+
     // Until the end of the input stream,
-    while (c != STOP) {
-        c = next(stdin);     // Read until we have a token
+    /*while (c != STOP) {
+        //c = next(fopen("test.txt", "r"));     // Read until we have a token
+        //printf("%s\n", c);
         emit_instruction(c); // Emit the instruction it stands for
-    }
+    }*/
 
     // Finalize by drawing the traced path, and exiting
     printf("stroke\nshowpage\n");
