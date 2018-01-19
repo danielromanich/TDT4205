@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "pencil.h"
+#include <ctype.h>
 
 uint8_t validateState(uint8_t, uint8_t);
 uint8_t getState(uint8_t, char);
@@ -79,10 +80,9 @@ uint8_t validateState(uint8_t state, uint8_t next_state) {
 //S(3) == ONE, S(7) == FOUR, S(11) == STOP, S(14) = TWO, S(18) = THREE
 command_t next(FILE *input) {
     uint8_t state = 0;
-    char *str = "two";
-    for (int i = 0; i < 3; i++) {
-        state = getState(state, str[i]);
-        printf("Char: %c, State: %d\n", str[i], state);
+    char next_char = tolower(fgetc(input));
+    while (next_char != EOF) {
+        state = getState(state, next_char);
         switch (state) {
             case 3:
                 return ONE;
@@ -95,6 +95,7 @@ command_t next(FILE *input) {
             case 18:
                 return THREE;
         }
+        next_char = tolower(fgetc(input));
     }
     return STOP;
 }
