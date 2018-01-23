@@ -136,28 +136,27 @@ emit_instruction(command_t word) {
 }
 
 
-/*
- * Main function - glue everything together.
- */
 int
-main(int argc, char **argv) {
+main ( int argc, char **argv )
+{
     // Initialize the state machine (if neccessary)
-    init_transtab();
+    init_transtab ();
 
     // Print a bit of startup, to start drawing somewhere sensible
-    printf("newpath\n%d %d moveto\n", x, y);
+    printf ( "newpath\n%d %d moveto\n", x, y );
 
     // Make sure the loop below runs at least once (the value given
-    // here will be discarded in the first iteration) 
-    command_t c = FOUR;
-    FILE* fp = fopen("../test.txt", "r");
+    // here will be discarded in the first iteration)
+    command_t c = FOUR ;
+
     // Until the end of the input stream,
-    while (c != STOP) {
-        c = next(fp);     // Read until we have a token
-        emit_instruction(c); // Emit the instruction it stands for
+    while ( c != STOP)
+    {
+        c = next ( stdin );     // Read until we have a token
+        emit_instruction ( c ); // Emit the instruction it stands for
     }
 
     // Finalize by drawing the traced path, and exiting
-    printf("stroke\nshowpage\n");
-    exit(EXIT_SUCCESS);
+    printf ( "stroke\nshowpage\n" );
+    exit ( EXIT_SUCCESS );
 }
