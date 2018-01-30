@@ -1,4 +1,2 @@
-One 
-Two 
-Four Two One One 
+One Four Two Four Four Two One One 
 Stop

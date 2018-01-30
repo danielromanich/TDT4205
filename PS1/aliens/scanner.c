@@ -72,7 +72,7 @@ uint8_t validateState(uint8_t state, uint8_t next_state) {
 
 
 /*
- * Return the next token from reading the given input stream.
+ * Return the next token from reading the given input streausm.
  * The words to be recognized are 'turn', 'draw' and 'move',
  * while the returned tokens may be TURN, DRAW, MOVE or END (as
  * enumerated in 'pencil.h').

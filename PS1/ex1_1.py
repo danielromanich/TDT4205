@@ -12,7 +12,7 @@ out_file2 = open('aliens.txt', 'w')
 ## within the inverted commas
 ##
 
-regexr = '[A-Za-z]*((e+n*)|((r|v|q|c|n)+u*i+))t+o+s*$'  # input the appropriate regular expression here
+regexr = '[A-Za-z]*((e+n*)|((r|v|q|c|n)*u*i+))t+o+s*'  # input the appropriate regular expression here
 rhyme = re.compile(regexr)
 
 filepath = 'parody_verse.txt'
@@ -27,10 +27,9 @@ with open(filepath) as fp:
         print(line)
         if not (re.match('s*\r?\n', line)):
             print("Linedddd {}: {}".format(cnt, line.strip()))
-
             if rhyme.findall(line.split()[-1]):
                 verse_count += 1
-            print line.split()[-1]
+            print("At verse: " + line.split()[-1] + "Matches: " + str(rhyme.match(line.split()[-1])))
             print verse_count
         else:
             rhymes = verses_output[verse_count]
