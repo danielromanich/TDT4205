@@ -7,7 +7,7 @@
 
 whitespace  [\ \t\n\r\v]
 digit   [0-9]
-letter  [A-Za-z]
+letter  [A-Za-z_]
 comment \/\/[^\n]*\n
 string \".*\"
 
@@ -26,12 +26,18 @@ DO                              { return DO; }
 VAR                             { return VAR; }
 FUNC                            { return FUNC; }
 
+{whitespace}+                   {  }
+{comment}                       {  }
+{digit}+                        { return NUMBER; }
+{string}                        { return STRING; }
+{letter}({letter}|{digit})*     { return IDENTIFIER; }
+
 '>>'                            { return RSHIFT; }
 '<<'                            { return LSHIFT; }
 '='                             { return '='; }
 '+'                             { return '+'; }
 '-'                             { return '-'; }
-'*'                             { return '*'; }
+'\*'                             { return '*'; }
 '\/'                             { return '/'; }
 '<'                             { return '<'; }
 '>'                             { return '>'; }
@@ -41,11 +47,6 @@ FUNC                            { return FUNC; }
 '\|'                             { return '|'; }
 ':='                            { return ASSIGN; }
 
-{whitespace}+                   {  }
-{comment}                       {  }
-{digit}+                        { return NUMBER; }
-{string}                        { return STRING; }
-{letter}({letter}|{digit})*     { return IDENTIFIER; }
-
 .                               { return yytext[0]; }
+
 %%
