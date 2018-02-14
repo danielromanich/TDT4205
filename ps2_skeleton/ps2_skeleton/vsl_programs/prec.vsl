@@ -1,0 +1,8 @@
+FUNC unary_minus_precedence()
+BEGIN
+    VAR a, b
+    a := -1*2
+    b := (-1)*2
+    c := a>>1 | b<<3
+    RETURN 0
+END
