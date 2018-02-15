@@ -7,16 +7,20 @@ node_t *root;
 int
 main ( int argc, char **argv )
 {
+
+
     /*int tokenId;
     while((tokenId = yylex()) != 0) {
         printf("ID: %d\t\tValue: %s\n", tokenId, yytext);
     }*/
 
 
-    //For a long time I had an issue with the parser causing a segfault
-    //It took a really long time to debug, but I finally realized that for the
-    //number data nodes I had to make a pointer for the number data and not
-    //store it directly into the node data
+    //For a long time I had an issue with the parser causing a segfault. After a lot of debugging I found that the
+    //issue was connected with the NUMBER_DATA node. I finally realized that I was setting the data pointer to the
+    //number value parsed from yytext, instead of allocating another memory slot for the data. Therefore the data pointer
+    //pointed to some random memory-location which it was not allowed to access.
+
+
 
     yyparse();
 
