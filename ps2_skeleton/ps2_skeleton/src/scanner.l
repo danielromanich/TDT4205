@@ -9,7 +9,7 @@ whitespace  [\ \t\n\r\v]
 digit   [0-9]
 letter  [A-Za-z_]
 comment \/\/[^\n]*\n
-string \".*\"
+string \"([^\n\"]|\\\")*\"
 
 %%
 
@@ -32,20 +32,20 @@ FUNC                            { return FUNC; }
 {string}                        { return STRING; }
 {letter}({letter}|{digit})*     { return IDENTIFIER; }
 
-'>>'                            { return RSHIFT; }
-'<<'                            { return LSHIFT; }
+(<<)                            { return RSHIFT; }
+(>>)                            { return LSHIFT; }
 '='                             { return '='; }
 '+'                             { return '+'; }
 '-'                             { return '-'; }
-'\*'                             { return '*'; }
-'\/'                             { return '/'; }
+'\*'                            { return '*'; }
+'\/'                            { return '/'; }
 '<'                             { return '<'; }
 '>'                             { return '>'; }
 '~'                             { return '~'; }
 '&'                             { return '&'; }
 '^'                             { return '^'; }
-'\|'                             { return '|'; }
-':='                            { return ASSIGN; }
+'\|'                            { return '|'; }
+(:=)                            { return ASSIGN; }
 
 .                               { return yytext[0]; }
 
