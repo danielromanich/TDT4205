@@ -1,0 +1,21 @@
+
+// This program tests the evaluation of the unary minus
+
+FUNC bitwise_operators ( a, b )
+BEGIN
+    VAR c
+    PRINT "a is", a, "and b is", b
+    c := ~ a
+    PRINT "~", a,"=", c
+    c := a | b
+    PRINT a,"|",b,"=",c
+    c := a ^ b
+    PRINT a,"^",b,"=",c
+    c := a & b
+    PRINT a,"&",b,"=",c
+    c := a << b
+    PRINT a,"<<",b,"=",c
+    c := a >> b
+    PRINT a,">>",b,"=",c
+    RETURN 0
+END
