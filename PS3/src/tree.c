@@ -10,6 +10,11 @@ static void node_finalize ( node_t *discard );
 static void destroy_subtree ( node_t *discard );
 static void modify_node( node_t *node );
 static int is_list(node_t *node );
+static void visit_node(node_t *node, int depth, node_t *parent, int type);
+static void compute_expressions(node_t *node);
+static void simplify_lists(node_t *node, node_t *parent_node);
+static void print_list_to_statement(node_t *node);
+static void reduce_node(node_t *node, int depth, node_t *parent_node);
 
 /* External interface */
 void
@@ -135,7 +140,6 @@ void compute_expressions(node_t *node) {
             } else if (!strcmp(node->data, ">>")) {
                 *result = *v1 >> *v2;
             }
-            fprintf(stderr, "At expression %d %s %d = %d\n", *v1, node->data, *v2, *result);
             node->data = result;
             node->n_children = 0;
             node->type = 24;
@@ -149,7 +153,6 @@ void compute_expressions(node_t *node) {
             } else if (!strcmp(node->data, "~")) {
                 *result = ~(*v1);
             }
-            fprintf(stderr, "At expression %s(%d) = %d\n", node->data, *v1, *result);
             node->data = result;
             node->n_children = 0;
             node->type = 24;
