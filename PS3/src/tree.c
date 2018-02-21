@@ -1,4 +1,5 @@
 #include <vslc.h>
+#include <string.h>
 
 // Tasks
 static void node_print ( node_t *root, int nesting );
@@ -31,7 +32,7 @@ void visit_node(node_t *node, int depth, node_t *parent, int type) {
     if (node != NULL) {
         //(*f)(*node);
         if (type == 0)
-                reduce_node(node, depth, parent);
+            reduce_node(node, depth, parent);
         for (int i = 0; i < node->n_children; i++) {
             visit_node(node->children[i], depth + 1, node, type);
         }
@@ -43,7 +44,7 @@ void visit_node(node_t *node, int depth, node_t *parent, int type) {
                 print_list_to_statement(node);
             break;
             case 3:
-                //compute_expressions(node);
+                compute_expressions(node);
             break;
         }
     }
@@ -68,7 +69,7 @@ void reduce_node(node_t *node, int depth, node_t *parent) {
 void print_list_to_statement(node_t *node) {
     if (node->type == 4)
         node->type = 15;
-}ls
+}
 
 int ignore_node_reduction(node_t *node, int depth, node_t *parent) {
     if (node != NULL) {
@@ -111,71 +112,52 @@ void simplify_lists(node_t *node, node_t *parent_node) {
 
 void compute_expressions(node_t *node) {
     if (node != NULL && node->type == 19) {
-        if (node->n_children == 1)
-            fprintf(stderr, "At expression %s %d %d\n", node->data, node->children[0]->data, node->children[0]->type);
         if (node->n_children == 2 && node->children[0]->type == 24 && node->children[1]->type == 24) {
-            int64_t *value1 = (int64_t) node->children[0], *value2 = (int64_t) node->children[1];
-            char *op = (char *) node->data;
-            fprintf(stderr, "Found a equation %d %s %d\n", *value1, *op, *value2);
+            int64_t *v1 = (int64_t  *) node->children[0]->data, *v2 = (int64_t *) node->children[1]->data;
+            int64_t *result = malloc(sizeof(int64_t));
+            char *op = node->data;
+            if (!strcmp(node->data, "+")) {
+                *result = (int64_t) (*v1 + *v2);
+            } else if (!strcmp(node->data, "-")) {
+                *result = *v1 - *v2;
+            } else if (!strcmp(node->data, "*")) {
+                *result = *v1 * *v2;
+            } else if (!strcmp(node->data, "/")) {
+                *result = *v1 / *v2;
+            } else if (!strcmp(node->data, "&")) {
+                *result = *v1 & *v2;
+            } else if (!strcmp(node->data, "^")) {
+                *result = *v1 ^ *v2;
+            } else if (!strcmp(node->data, "|")) {
+                *result = *v1 | *v2;
+            } else if (!strcmp(node->data, "<<")) {
+                *result = *v1 << *v2;
+            } else if (!strcmp(node->data, ">>")) {
+                *result = *v1 >> *v2;
+            }
+            fprintf(stderr, "At expression %d %s %d = %d\n", *v1, node->data, *v2, *result);
+            node->data = result;
+            node->n_children = 0;
+            node->type = 24;
+            free (node -> children);
+            node->children = NULL;
         } else if (node->n_children == 1 && node->children[0]->type == 24) {
-
+            int64_t *v1 = (int64_t *) node->children[0]->data;
+            int64_t *result = malloc(sizeof(int64_t));
+            if (!strcmp(node->data, "-")) {
+                *result = -(*v1);
+            } else if (!strcmp(node->data, "~")) {
+                *result = ~(*v1);
+            }
+            fprintf(stderr, "At expression %s(%d) = %d\n", node->data, *v1, *result);
+            node->data = result;
+            node->n_children = 0;
+            node->type = 24;
+            free (node -> children);
+            node->children = NULL;
         }
     }
 }
-
-
-void modify_node(node_t *node) {
-    if (node != NULL) {
-        switch(node->type) {
-            //All of the internal nodes that represent lists
-            /*case 19:
-                if (node->n_children == 1 && node->children[0]->type == 24) {
-                    int64_t *val = node->children[0]->data;
-                    node->type = 24;
-                    node->data = val;
-                    int64_t *asd = node->data;
-                    fprintf(stderr, "At bottom node: %d", *((int64_t *) node->data));
-                }
-                if (node->n_children == 2)
-                    fprintf(stderr, "Child1: %d - Child2: %d\n", node->children[0]->type, node->children[1]->type);
-                if (node->n_children == 2 && node->children[0]->type == 24 && node->children[1]->type == 24) {
-                    int64_t *v1 = (int64_t) node->children[0], *v2 = (int64_t) node->children[1];
-                    fprintf(stderr, "In expression node, children with values: %d, %d\n", *v1, *v2);
-                    if (node->data == "+") {
-                        node->data = (void *) (*v1 + *v2);
-                    } else if (node->data == "-") {
-                        node->data = (void *) (*v1 - *v2);
-                    } else if (node->data == "*") {
-                        node->data = (void *) (*v1 * *v2);
-                    } else if (node->data == "/") {
-                        node->data = (void *) (*v1 / *v2);
-                    } else if (node->data == "&") {
-                        node->data = (void *) (*v1 & *v2);
-                    } else if (node->data == "^") {
-                        node->data = (void *) (*v1 ^ *v2);
-                    } else if (node->data == "|") {
-                        node->data = (void *) (*v1 | *v2);
-                    } else if (node->data == "<<") {
-                        node->data = (void *) (*v1 << *v2);
-                    } else if (node->data == ">>") {
-                        node->data = (void *) (*v1 >> *v2);
-                    }
-                } else {
-                    int64_t *v1 = (int64_t) node->children[0]->data;
-                    if (node->data == "-") {
-                        node->data = (void *)(-(*v1));
-                    } else if (node->data == "~") {
-                        node->data = (void *)(~(*v1));
-                    }
-                }
-                destroy_subtree(node->children[0]);
-                node->children = NULL;
-                node->n_children = 0;
-                break;*/
-        }
-    }
-}
-
 
 int is_list(node_t *node) {
     return (node->type >= 3 && node->type <= 9 || node->type == 1) ? 1 : 0;
