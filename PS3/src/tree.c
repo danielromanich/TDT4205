@@ -10,7 +10,7 @@ static void node_finalize ( node_t *discard );
 static void destroy_subtree ( node_t *discard );
 static void modify_node( node_t *node );
 static int is_list(node_t *node );
-static void visit_node(node_t *node, int depth, node_t *parent, int type);
+static void visit_node(node_t *node, int depth, node_t *parent);
 static void compute_expressions(node_t *node);
 static void simplify_lists(node_t *node, node_t *parent_node);
 static void print_list_to_statement(node_t *node);
@@ -27,35 +27,21 @@ destroy_syntax_tree ( void )
 void
 simplify_syntax_tree ( void )
 {
-    visit_node(root, 0, NULL, 0);
-    visit_node(root, 0, NULL, 1);
-    visit_node(root, 0, NULL, 2);
-    visit_node(root, 0, NULL, 3);
+    visit_node(root, 0, NULL);
 }
 
-void visit_node(node_t *node, int depth, node_t *parent, int type) {
+void visit_node(node_t *node, int depth, node_t *parent) {
     if (node != NULL) {
-        //(*f)(*node);
-        if (type == 0)
-            reduce_node(node, depth, parent);
+        reduce_node(node, depth, parent); //Reduce all nodes with only one child and no significant data
         for (int i = 0; i < node->n_children; i++) {
-            visit_node(node->children[i], depth + 1, node, type);
+            visit_node(node->children[i], depth + 1, node);
         }
-        switch(type) {
-            case 1:
-                simplify_lists(node, parent);
-            break;
-            case 2:
-                print_list_to_statement(node);
-            break;
-            case 3:
-                compute_expressions(node);
-            break;
-        }
+        simplify_lists(node, parent); //Simplify lists by collapsing them and combining children
+        print_list_to_statement(node); //Convert simplified print_lists to print_statements
+        compute_expressions(node); //Calculate all expressions consisting of number children
     }
 }
 
-int count = 0;
 void reduce_node(node_t *node, int depth, node_t *parent) {
     if (node != NULL && node->data == NULL && node->type != 0 && !is_list(node) && node->type != 21 && node->type != 12 && node->type != 14) {
         if (node->n_children == 1) {
@@ -76,21 +62,10 @@ void print_list_to_statement(node_t *node) {
         node->type = 15;
 }
 
-int ignore_node_reduction(node_t *node, int depth, node_t *parent) {
-    if (node != NULL) {
-        if (is_list(node)) {
-            if (node->n_children == 1)
-            if (node->type == 6 && node->children[0]->type != 6 && parent->type != 6)
-                return 1;
-        }
-    }
-    return 0;
-}
-
 void simplify_lists(node_t *node, node_t *parent_node) {
     if (node != NULL) {
         if (is_list(node)) {
-            //If the parent is a list and the child is a list, remove the parent and make the child the new parent
+            //If the node is a list with one child that also is a list, exchange current list for the child
             if (node->n_children == 1 && is_list(node->children[0])) {
                 node_t *child = node->children[0];
                 node->data  = child->data;
@@ -99,6 +74,8 @@ void simplify_lists(node_t *node, node_t *parent_node) {
                 node->type = child->type;
                 free(child);
             } else if (parent_node != NULL) {
+                //If the parent is a list and current is a list and they are of the same type merge the current node
+                //children into the parent
                 if (is_list(node) && parent_node != NULL && is_list(parent_node) && node->type == parent_node->type) {
                     int child_count = (node->n_children) + 1;
                     node_t** child_list = (node_t **) malloc ( child_count * sizeof(node_t *) );
