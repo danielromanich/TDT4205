@@ -1,3 +1,2 @@
-# TDT4205
-Kompilatorteknikk</br>
+# TDT4205 - Kompilatorteknikk
 The exercises in the course
