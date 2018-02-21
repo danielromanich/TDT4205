@@ -1,3 +1,3 @@
 # TDT4205
-Kompilatorteknikk \n
+Kompilatorteknikk</br>
 The exercises in the course
