@@ -97,7 +97,6 @@ void compute_expressions(node_t *node) {
         if (node->n_children == 2 && node->children[0]->type == 24 && node->children[1]->type == 24) {
             int64_t *v1 = (int64_t  *) node->children[0]->data, *v2 = (int64_t *) node->children[1]->data;
             int64_t *result = malloc(sizeof(int64_t));
-            char *op = node->data;
             if (!strcmp(node->data, "+")) {
                 *result = (int64_t) (*v1 + *v2);
             } else if (!strcmp(node->data, "-")) {
