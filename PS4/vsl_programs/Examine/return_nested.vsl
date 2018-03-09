@@ -1,0 +1,18 @@
+FUNC hello ()
+BEGIN
+    PRINT "t is", test ( 64 )
+    RETURN 0
+END
+
+FUNC test ( a )
+BEGIN
+    VAR x,y
+    x := 32
+    y := 20
+    BEGIN
+        VAR x
+        x := 64
+        RETURN x+a
+        PRINT "This never executes"
+    END
+END

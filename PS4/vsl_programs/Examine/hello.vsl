@@ -1,0 +1,5 @@
+FUNC hello ()
+BEGIN
+    PRINT "Hello, world!"
+    RETURN 0
+END

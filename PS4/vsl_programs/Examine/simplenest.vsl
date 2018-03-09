@@ -1,0 +1,21 @@
+FUNC hello ()
+BEGIN
+    VAR t
+    t := test ( 42 )
+    RETURN 0
+END
+
+FUNC test ( a )
+BEGIN
+    VAR x,y
+    x := 32
+    y := 20
+    PRINT "Outer x is", x, "y is", y, "parm is", a
+    BEGIN
+        VAR x
+        x := 64
+        PRINT "Inner x is",x, "y is", y, "parm is", a
+    END
+    PRINT "Outer x is",x, "y is", y, "parm is", a
+    RETURN 0
+END

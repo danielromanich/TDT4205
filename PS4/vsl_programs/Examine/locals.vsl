@@ -1,0 +1,20 @@
+
+// This program tests the evaluation of local scopes
+
+VAR i,j,k
+
+FUNC nesting_scopes ( x, y, z )
+BEGIN
+    VAR a,b
+    VAR c,d
+    a := 21
+    BEGIN
+        VAR e,f
+        VAR a,b
+        a := 42
+        PRINT "Inner a is ", a
+    END
+    PRINT "Outer a is ", a
+    PRINT "Global k is ", k
+    RETURN 0
+END

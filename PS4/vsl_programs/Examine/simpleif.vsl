@@ -1,0 +1,21 @@
+FUNC dingdong ( a, b, c, d, e, f, g )
+BEGIN
+    VAR x
+    x := 42
+    PRINT a, b, c, d, e, f, g
+    IF x = 42 THEN
+    BEGIN
+        PRINT "Equal!"
+        x := 43
+    END
+    ELSE
+    BEGIN
+        x := 44
+    END
+    WHILE x > 0 DO
+    BEGIN
+        PRINT x
+        x := x-1
+    END
+    RETURN x
+END
