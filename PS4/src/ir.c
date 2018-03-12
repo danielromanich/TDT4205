@@ -17,11 +17,13 @@ void bind_names(symbol_t*, node_t*);
 void destroy_symtab();
 void append_function(node_t*, int);
 void append_vars(tlhash_t*, node_t*, symtype_t, int);
-void search_tree(node_t*, tlhash_t*, int, int*);
+void search_tree(node_t*, node_t *, tlhash_t*, int, int*);
 void append_string_list(node_t*);
 void update_scope_list(tlhash_t *);
 void lookup_scopes(node_t *, symbol_t *, int);
 void free_table(tlhash_t *);
+void print_symbols();
+void print_bindings(node_t *);
 
 char* sym_string[4] = {
     "SYM_GLOBAL_VAR",
@@ -51,9 +53,9 @@ create_symbol_table ( void )
 void
 print_symbol_table ( void )
 {
-      print_globals ();
+       print_symbols ();
+       print_bindings(root);
 }
-
 
 void
 destroy_symbol_table ( void )
@@ -62,25 +64,96 @@ destroy_symbol_table ( void )
 }
 
 void
-print_globals ( void )
+print_symbols ( void )
 {
+    printf ( "String table:\n" );
+    for ( size_t s=0; s<stringc; s++ )
+        printf  ( "%zu: %s\n", s, string_list[s] );
+    printf ( "-- \n" );
+
+    printf ( "Globals:\n" );
     size_t n_globals = tlhash_size(global_names);
     symbol_t *global_list[n_globals];
     tlhash_values ( global_names, (void **)&global_list );
-    for ( size_t g=0; g<n_globals; g++ ) {
-        fprintf ( stderr, "Global: %s (%d)\n", global_list[g]->name, (int) global_list[g]->seq);
-        if (global_list[g]->type == SYM_FUNCTION) {
-            size_t n_locals = tlhash_size(global_list[g]->locals);
-            symbol_t *local_list[n_locals];
-            tlhash_values ( global_list[g]->locals, (void **)&local_list );
-            for (size_t i = 0; i < n_locals; i++) {
-                fprintf(stderr, "Local: %s (%d) - %s\n", local_list[i]->name, (int) local_list[i]->seq, sym_string[local_list[i]->type]);
-            }
+    for ( size_t g=0; g<n_globals; g++ )
+    {
+        switch ( global_list[g]->type )
+        {
+            case SYM_FUNCTION:
+                printf (
+                    "%s: function %zu:\n",
+                    global_list[g]->name, global_list[g]->seq
+                );
+                if ( global_list[g]->locals != NULL )
+                {
+                    size_t localsize = tlhash_size( global_list[g]->locals );
+                    printf (
+                        "\t%zu local variables, %zu are parameters:\n",
+                        localsize, global_list[g]->nparms
+                    );
+                    symbol_t *locals[localsize];
+                    tlhash_values(global_list[g]->locals, (void **)locals );
+                    for ( size_t i=0; i<localsize; i++ )
+                    {
+                        printf ( "\t%s: ", locals[i]->name );
+                        switch ( locals[i]->type )
+                        {
+                            case SYM_PARAMETER:
+                                printf ( "parameter %zu\n", locals[i]->seq );
+                                break;
+                            case SYM_LOCAL_VAR:
+                                printf ( "local var %zu\n", locals[i]->seq );
+                                break;
+                        }
+                    }
+                }
+                break;
+            case SYM_GLOBAL_VAR:
+                printf ( "%s: global variable\n", global_list[g]->name );
+                break;
         }
     }
-    for (int i = 0; i < stringc; i++) {
-        fprintf(stderr, "String #%d is: %s\n", i, string_list[i]);
+    printf ( "-- \n" );
+}
+
+
+void
+print_bindings ( node_t *root )
+{
+    if ( root == NULL )
+        return;
+    else if ( root->entry != NULL )
+    {
+        switch ( root->entry->type )
+        {
+            case SYM_GLOBAL_VAR:
+                printf ( "Linked global var '%s'\n", root->entry->name );
+                break;
+            case SYM_FUNCTION:
+                printf ( "Linked function %zu ('%s')\n",
+                    root->entry->seq, root->entry->name
+                );
+                break;
+            case SYM_PARAMETER:
+                printf ( "Linked parameter %zu ('%s')\n",
+                    root->entry->seq, root->entry->name
+                );
+                break;
+            case SYM_LOCAL_VAR:
+                printf ( "Linked local var %zu ('%s')\n",
+                    root->entry->seq, root->entry->name
+                );
+                break;
+        }
+    } else if ( root->type == STRING_DATA ) {
+        size_t string_index = *((size_t *)root->data);
+        if ( string_index < stringc )
+            printf ( "Linked string %zu\n", *((size_t *)root->data) );
+        else
+            printf ( "(Not an indexed string)\n" );
     }
+    for ( size_t c=0; c<root->n_children; c++ )
+        print_bindings ( root->children[c] );
 }
 
 void
@@ -113,7 +186,7 @@ void append_function(node_t *node, int seq) {
     sym->node = node;
     sym->name = node->children[0]->data;
     sym->seq = (size_t) seq;
-    fprintf(stderr, "Adding %s(%s) of type %s to GLOBAL_SYMTAB (%d)\n", sym_string[sym->type], sym->name, node_string[node->type], (int) sym->seq);
+    //fprintf(stderr, "Adding %s(%s) of type %s to GLOBAL_SYMTAB (%d)\n", sym_string[sym->type], sym->name, node_string[node->type], (int) sym->seq);
     tlhash_insert(global_names, sym->name, strlen(sym->name), sym);
 }
 
@@ -127,7 +200,7 @@ void append_vars(tlhash_t *parent, node_t *list, symtype_t type, int seq) {
         if (type != SYM_GLOBAL_VAR)
             sym->seq = (size_t) seq;
         tlhash_insert(parent, sym->name, strlen(sym->name), sym);
-        fprintf(stderr, "Adding %s(%s) of type %s to LOCAL_SYMTAB (%d)\n", sym_string[type], sym->name, node_string[child->type], (int) sym->seq);
+        //fprintf(stderr, "Adding %s(%s) of type %s to LOCAL_SYMTAB (%d) size: %d\n", sym_string[type], sym->name, node_string[child->type], (int) sym->seq, tlhash_size(parent));
         seq++;
     }
 }
@@ -152,7 +225,7 @@ bind_names ( symbol_t *function, node_t *root )
     scopec = 0;
     update_scope_list(global_names);
     update_scope_list(function->locals);
-    search_tree(root, function->locals, 1, &seq);
+    search_tree(root, NULL, function->locals, 1, &seq);
     //TODO
     //Merge local scopes swith the local sym-table and index on name + sequencing number
     if (scopec > 2) {
@@ -168,11 +241,10 @@ bind_names ( symbol_t *function, node_t *root )
             free_table(scope_list[i]); //Free symbol tables in deeper scopes after they have
             //been merged with the most local
         }
-        free(scope_list); //Free the "stack" of symbol tables"s
     }
 }
 
-void search_tree(node_t *node, tlhash_t *function, int scope_level, int *seq) {
+void search_tree(node_t *node, node_t *parent, tlhash_t *function, int scope_level, int *seq) {
     if (node != NULL) {
         symbol_t *sym = NULL;
         node_t *child;
@@ -195,14 +267,15 @@ void search_tree(node_t *node, tlhash_t *function, int scope_level, int *seq) {
                 *seq += child->n_children;
                 break;
             case IDENTIFIER_DATA:
-                lookup_scopes(node, sym, scope_level);
+                if (parent->type != 10 && parent->type != 6)
+                    lookup_scopes(node, sym, scope_level);
                 break;
             case STRING_DATA:
                 append_string_list(node);
                 break;
         }
         for (int i = 0; i < node->n_children; i++) {
-            search_tree(node->children[i], function, scope_level, seq);
+            search_tree(node->children[i], node, function, scope_level, seq);
         }
     }
 }
@@ -246,20 +319,24 @@ destroy_symtab ( void )
         free_table(global->locals);
     }
     free_table(global_names);
+    free(scope_list);
 }
 
 void free_table(tlhash_t *tab) {
-    size_t size = tlhash_size(tab);
-    char *keys[size];
-    tlhash_keys(tab, (void **) &keys);
-    for (int j = 0; j < size; j++) {
-        //Remove twice, because the tables has been hashed with different
-        //data types (hashing on name is easy while linking, but creates conflicts
-        //when we merge symbol tables that has symbols of the same name
-        if (tlhash_remove(tab, keys[j], strlen(keys[j])) == TLHASH_SUCCESS)
-            fprintf(stderr, "Removed a symbol entry with string key\n");
-        if (tlhash_remove(tab, keys[j], sizeof(size_t)) == TLHASH_SUCCESS)
-            fprintf(stderr, "Removed a symbol entry with seq\n");
+    if (tab != NULL) {
+        size_t size = tlhash_size(tab);
+        char *keys[size];
+        tlhash_keys(tab, (void **) &keys);
+        for (int j = 0; j < size; j++) {
+            //Remove twice, because the tables has been hashed with different
+            //data types (hashing on name is easy while linking, but creates conflicts
+            //when we merge symbol tables that has symbols of the same name
+            if (tlhash_remove(tab, keys[j], strlen(keys[j])) == TLHASH_SUCCESS) {
+                //fprintf(stderr, "Removed a symbol entry with string key\n");
+            } else if (tlhash_remove(tab, keys[j], sizeof(size_t)) == TLHASH_SUCCESS) {
+                //fprintf(stderr, "Removed a symbol entry with seq\n");
+            }
+        }
+        free(tab);
     }
-    free(tab);
 }
