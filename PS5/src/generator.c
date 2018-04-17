@@ -23,12 +23,13 @@ static void print_int(char* str);
 static void print_str(int64_t val);
 static void print_new_line();
 
-int64_t if_count = 0;
+int64_t if_count = 0, while_count = 0;
 
 void
 generate_program ( void )
 {
     generate_stringtable();
+    print_global_variables();
     size_t n_globals = tlhash_size(global_names);
     symbol_t *global_list[n_globals];
     tlhash_values ( global_names, (void **)&global_list );
@@ -38,7 +39,6 @@ generate_program ( void )
             break;
         }
     }
-    print_global_variables();
     print_functions();
 }
 
@@ -110,9 +110,10 @@ void print_global_variables() {
     size_t n_globals = tlhash_size(global_names);
     symbol_t *global_list[n_globals];
     tlhash_values ( global_names, (void **)&global_list );
+    puts(".section .data");
     for (int i = 0; i < n_globals; i++) {
         if (global_list[i]->type == SYM_GLOBAL_VAR)
-            printf("_%s\t.zero\t8\n", global_list[i]->name);
+            printf("_%s:\t.zero\t8\n", global_list[i]->name);
     }
 }
 
@@ -127,7 +128,7 @@ void print_functions() {
             printf("\tpushq %%rbp\n"); //Push the base-pointer onto the stack
             printf("\tmovq %%rsp, %%rbp\n"); //Move the current stack pointer to the base pointer
             nparms = global_list[i]->nparms;
-            for (int i = 0; i < nparms; i++) {
+            for (int i = 0; i < MIN(nparms, 6); i++) {
                 printf("\tpushq %s\n", record[i]);
             }
             int stack_size = 8 * (global_list[i]->locals->size);
@@ -152,12 +153,14 @@ void traverse_function(node_t* node) {
                 handle_printing(node);
                 return;
             case NULL_STATEMENT: //Null
+                handle_continue(node);
                 return;
             case IF_STATEMENT: //If
                 //Generatae this by creating labels and generating code between
                 handle_if_statement(node);
                 return;
             case WHILE_STATEMENT: //While
+                handle_while_statement(node);
                 return;
         }
     }
@@ -169,13 +172,13 @@ void traverse_function(node_t* node) {
 void handle_function_call(node_t* node) {
     int64_t param_count = node->children[1] == NULL ? 0 : node->children[1]->n_children;
     if (param_count > 6) {
-        for (int i = 0; i < param_count - 6; i++) {
+        for (int i = param_count - 1; i >= 6; i--) {
             load_variable(node->children[1]->children[i], "%rax");
             puts("\tpushq %rax");
         }
     }
-    for (int i = param_count <= 6 ? 0 : param_count - 6; i < param_count; i++) {
-        load_variable(node->children[1]->children[i], record[i - (param_count <= 6 ? 0 : param_count - 6)]);
+    for (int i = 0; i < MIN(param_count, 6); i++) {
+        load_variable(node->children[1]->children[i], record[i]);
     }
     printf("\tcall _%s\n", (char *) node->children[0]->data);
 }
@@ -204,13 +207,7 @@ void handle_printing(node_t* node) {
         if (child->data != NULL)
         switch(child->type) {
             case EXPRESSION:
-                find_variable(child, "%rsi");
-                print_int("%rsi");
-                break;
             case IDENTIFIER_DATA:
-                find_variable(child, "%rsi");
-                print_int("%rsi");
-                break;
             case NUMBER_DATA:
                 find_variable(child, "%rsi");
                 print_int("%rsi");
@@ -233,14 +230,16 @@ void find_variable(node_t* node, char* dest) {
             break;
         case IDENTIFIER_DATA:
             switch (node->entry->type) {
+                int64_t seq = 0;
                 case SYM_PARAMETER:
-                    printf("\tmovq -%d(%%rbp), %s\n", (int) (8 * (node->entry->seq + 1)), dest);
+                    seq = node->entry->seq;
+                    printf("\tmovq %s%d(%%rbp), %s\n", seq >= 6 ? "" : "-", (int) (8 * (seq >= 6 ? seq - 4 : seq + 1)), dest);
                     break;
                 case SYM_GLOBAL_VAR:
                     printf("\tmovq _%s, %s\n", node->entry->name, dest);
                     break;
                 case SYM_LOCAL_VAR:
-                    printf("\tmovq -%d(%%rbp), %s\n", (int) (8 * (node->entry->seq + nparms + 1)), dest);
+                    printf("\tmovq -%d(%%rbp), %s\n", (int) (8 * (node->entry->seq + MIN(nparms, 6) + 1)), dest);
                     break;
             }
             break;
@@ -253,61 +252,63 @@ void find_variable(node_t* node, char* dest) {
 
 void handle_expression(node_t* node) {
     if (node->n_children == 2 && (node->children[1] == NULL || node->children[1]->type == EXPRESSION_LIST)) {
-        handle_function_call(node);
+        handle_function_call(node); //If the expression is a function call handle that
     } else if (node->data != NULL &&
         node->n_children == 2) {
-        if (!strcmp(node->data, "<<")) {
-            find_variable(node->children[0], "%rax");
-            printf("\tmovq %%rax, %%rcx\n");
-            find_variable(node->children[1], "%rax");
-            printf("\txchgq %%rax, %%rcx\n");
-            printf("\tsalq %s, %%rax\n", "%cl");
-        } else if (!strcmp(node->data, ">>")) {
-            find_variable(node->children[0], "%rax");
-            printf("\tmovq %%rax, %%rcx\n");
-            find_variable(node->children[1], "%rax");
-            printf("\txchgq %%rax, %%rcx\n");
-            printf("\tsarq %s, %%rax\n", "%cl");
-        } else {
-            char* op = (char *) node->data;
-            int mul_div = *op == '*' || *op == '/';
-            if (mul_div) { //If we have multiplication or division we need to take a different approach
-                puts("\tpushq %rdx");
-            }
-            find_variable(node->children[mul_div ? 1 : 0], "%rax");
-            puts("\tpushq %rax");
-            find_variable(node->children[mul_div ? 0 : 1], "%rax");
-            switch (*op) {
-                case '+':
-                    puts("\taddq %rax, (%rsp)");
-                    break;
-                case '-':
-                    puts("\tsubq %rax, (%rsp)");
-                    break;
-                case '*':
-                    puts("\tmulq (%rsp)");
-                    puts("\tpopq %rdx");
-                    puts("\tpopq %rdx");
-                    break;
-                case '/':
-                    puts("\tcqo");
-                    puts("\tidivq (%rsp)");
-                    puts("\tpopq %rdx");
-                    puts("\tpopq %rdx");
-                    break;
-                case '|':
-                    puts("\torq %rax, (%rsp)");
-                    break;
-                case '&':
-                    puts("\tandq %rax, (%rsp)");
-                    break;
-                case '^':
-                    puts("\txorq %rax, (%rsp)");
-                    break;
-            }
-            if (!mul_div) //Result gets stored in rax automaticly from mul/div
-                puts("\tpopq %rax");
+        char* op = (char *) node->data;
+        switch (*op) {
+            case '<':
+                find_variable(node->children[0], "%rax");
+                printf("\tmovq %%rax, %%rcx\n");
+                find_variable(node->children[1], "%rax");
+                printf("\txchgq %%rax, %%rcx\n");
+                printf("\tsalq %s, %%rax\n", "%cl");
+                return;
+            case '>':
+                find_variable(node->children[0], "%rax");
+                printf("\tmovq %%rax, %%rcx\n");
+                find_variable(node->children[1], "%rax");
+                printf("\txchgq %%rax, %%rcx\n");
+                printf("\tsarq %s, %%rax\n", "%cl");
+                return;
         }
+        int mul_div = *op == '*' || *op == '/';
+        if (mul_div) { //If we have multiplication or division we need to take a different approach
+            puts("\tpushq %rdx");
+        }
+        find_variable(node->children[mul_div ? 1 : 0], "%rax");
+        puts("\tpushq %rax");
+        find_variable(node->children[mul_div ? 0 : 1], "%rax");
+        switch (*op) {
+            case '+':
+                puts("\taddq %rax, (%rsp)");
+                break;
+            case '-':
+                puts("\tsubq %rax, (%rsp)");
+                break;
+            case '*':
+                puts("\tmulq (%rsp)");
+                puts("\tpopq %rdx");
+                puts("\tpopq %rdx");
+                break;
+            case '/':
+                puts("\tcqo");
+                puts("\tidivq (%rsp)");
+                puts("\tpopq %rdx");
+                puts("\tpopq %rdx");
+                break;
+            case '|':
+                puts("\torq %rax, (%rsp)");
+                break;
+            case '&':
+                puts("\tandq %rax, (%rsp)");
+                break;
+            case '^':
+                puts("\txorq %rax, (%rsp)");
+                break;
+        }
+        if (!mul_div) //Result gets stored in rax automaticly from mul/div
+            puts("\tpopq %rax");
 
     } else if (node->n_children == 1) {
         find_variable(node->children[0], "%rax");
@@ -319,20 +320,21 @@ void handle_expression(node_t* node) {
                 puts("\tnotq %rax");
                 break;
         }
-        fprintf(stderr, "Node child of ~ is %s\ñ", node_string[node->children[0]->type]);
     }
 }
 
 void assign_variable_value(node_t* node, char* dest) {
     switch (node->entry->type) {
+        int64_t seq = 0;
         case SYM_PARAMETER:
-            printf("\tmovq %s, -%d(%%rbp)\n", dest, 8 * ((int) node->entry->seq + 1));
+            seq = node->entry->seq;
+            printf("\tmovq %s, %s%d(%%rbp)\n", dest, seq >= 6 ? "" : "-", 8 * ((int) (seq >= 6 ? seq - 4 : seq + 1)));
             break;
         case SYM_GLOBAL_VAR:
             printf("\tmovq %s, _%s\n", dest, node->entry->name);
             break;
         case SYM_LOCAL_VAR:
-            printf("\tmovq %s, -%d(%%rbp)\n", dest, 8 * ((int) node->entry->seq + nparms + 1));
+            printf("\tmovq %s, -%d(%%rbp)\n", dest, 8 * ((int) node->entry->seq + MIN(nparms, 6) + 1));
             break;
     }
 }
@@ -348,6 +350,9 @@ void load_variable(node_t* node, char* dest) {
 }
 
 void handle_if_statement(node_t* node) {
+    int64_t current_if = if_count; //We have to store the current if count before we increment it incase of
+    //recursive calls
+    if_count += 1;
     find_variable(node->children[0]->children[0], "%rax");
     find_variable(node->children[0]->children[1], "%rbx");
     puts("\tcmpq %rax, %rbx");
@@ -363,16 +368,44 @@ void handle_if_statement(node_t* node) {
             printf("jle");
             break;
     }
-    printf("\t %s%d\n", child_count == 1 ? "END_IF" : "ELSE", if_count);
+    printf("\t %s%d\n", child_count == 1 ? "END_IF" : "ELSE", current_if);
     traverse_function(node->children[1]);
-    printf("%s%d:\n", child_count == 1 ? "END_IF" : "ELSE", if_count);
+    if (child_count == 2) printf("\tjmp END_IF%d\n", current_if);
+    printf("%s%d:\n", child_count == 1 ? "END_IF" : "ELSE", current_if);
     if (child_count == 2) {
         traverse_function(node->children[2]);
-        printf("END_IF%d:\n", if_count);
+        printf("END_IF%d:\n", current_if);
     }
-    if_count += 1;
-    fprintf(stderr, "Relation %s!\n", node->children[0]->data);
 }
+
+void handle_while_statement(node_t* node) {
+    int64_t current_while = while_count;
+    while_count += 1;
+    printf("WHILE%d:\n", current_while);
+    find_variable(node->children[0]->children[0], "%rax");
+    find_variable(node->children[0]->children[1], "%rbx");
+    puts("\tcmpq %rax, %rbx");
+    switch (*((char*)node->children[0]->data)) {
+        case '=':
+            printf("jne");
+            break;
+        case '>':
+            printf("jge");
+            break;
+        case '<':
+            printf("jle");
+            break;
+    }
+    printf("\t DONE%d\n", current_while);
+    traverse_function(node->children[1]);
+    printf("\tjmp WHILE%d\n", current_while);
+    printf("DONE%d:\n", current_while);
+}
+
+void handle_continue(node_t* node) {
+    printf("\tjmp WHILE%d\n", while_count - 1);
+}
+
 
 void print_str(int64_t str_num) {
     printf("\tmovq $STR%d, %%rsi\n", str_num);
