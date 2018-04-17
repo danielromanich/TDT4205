@@ -1,0 +1,8 @@
+FUNC test( a )
+BEGIN
+    PRINT a
+    IF a > 10 THEN PRINT "Bigger"
+    IF a < 10 THEN PRINT "Smaller"
+    IF a = 10 THEN PRINT "Equal"
+    RETURN 0
+END

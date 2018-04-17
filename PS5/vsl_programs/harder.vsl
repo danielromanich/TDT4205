@@ -1,0 +1,32 @@
+FUNC start ()
+BEGIN
+    VAR x
+    PRINT "Nested scopes coming up..."
+    x := test_me ( 1 )
+    PRINT "x:=",x
+    RETURN 0
+END
+
+FUNC test_me ( a )
+BEGIN
+    PRINT "Parameter a is a:=", a
+    BEGIN
+        VAR a
+        a := 2
+        PRINT "Outer scope has a:=", a
+        BEGIN
+            VAR b
+            VAR a
+            a := 3
+            b := 4
+            BEGIN
+                PRINT "Inner scope has a:=", a, "and b:=", b
+                b := 5
+            END
+            PRINT "b was updated to ",b,"in inner scope"
+        END 
+        PRINT "Outer scope (still) has a:=",a
+    END
+    PRINT "Return expression (a-1) using a:=", a
+    RETURN a-1
+END

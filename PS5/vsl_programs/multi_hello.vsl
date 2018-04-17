@@ -1,0 +1,37 @@
+VAR w,x,y,z
+
+FUNC hello ()
+BEGIN
+//    PRINT "Hello,", "world!"
+//    PRINT "How", "are", "you?"
+//    PRINT 42, 43, 44
+//    x := 30
+//    y := -15
+//    z := (x*x)+(y*y)
+//    PRINT "x + y :=", x+y
+//    PRINT "x - y :=", x-y
+//    PRINT "x * y :=", x*y
+//    PRINT "x / y :=", x/y
+      w := goodbye( 1, 2, 3, 4, 5, 6, 7, 8 )
+      PRINT w
+    RETURN w
+END
+
+FUNC tralala (wang)
+BEGIN
+    VAR x,y,z,w
+    x := 3
+    y := 5
+    z := 2
+    w := 4
+    wang := 42
+    PRINT wang,x*y,z*w
+    RETURN 1
+END
+
+FUNC goodbye ( a, b, c, d, e, f, g, h )
+BEGIN
+    PRINT a,b,c,d,e,f,g,h
+    PRINT "Morna"
+    RETURN tralala(1)
+END

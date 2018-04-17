@@ -1,0 +1,5 @@
+FUNC hello (wang)
+BEGIN
+    PRINT "wang"
+    RETURN 1
+END
