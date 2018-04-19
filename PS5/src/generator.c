@@ -17,6 +17,9 @@ static void handle_assignments(node_t* node);
 static void handle_return(node_t* node);
 static void handle_printing(node_t* node);
 static void handle_expression(node_t* node);
+static void handle_while_statement(node_t* node);
+static void handle_if_statement(node_t* node);
+static void handle_continue(node_t* node);
 static void find_variable(node_t* node, char* str);
 static void assign_variable_value(node_t* node, char* str);
 static void print_int(char* str);
@@ -173,12 +176,12 @@ void handle_function_call(node_t* node) {
     int64_t param_count = node->children[1] == NULL ? 0 : node->children[1]->n_children;
     if (param_count > 6) {
         for (int i = param_count - 1; i >= 6; i--) {
-            load_variable(node->children[1]->children[i], "%rax");
+            find_variable(node->children[1]->children[i], "%rax");
             puts("\tpushq %rax");
         }
     }
     for (int i = 0; i < MIN(param_count, 6); i++) {
-        load_variable(node->children[1]->children[i], record[i]);
+        find_variable(node->children[1]->children[i], (char *) record[i]);
     }
     printf("\tcall _%s\n", (char *) node->children[0]->data);
 }
@@ -197,14 +200,13 @@ void handle_return(node_t* node) {
 }
 
 void handle_assignments(node_t* node) {
-    load_variable(node->children[1], "%rax");
+    find_variable(node->children[1], "%rax");
     assign_variable_value(node->children[0], "%rax");
 }
 
 void handle_printing(node_t* node) {
     for (int i = 0; i < node->n_children; i++) {
         node_t* child = node->children[i];
-        if (child->data != NULL)
         switch(child->type) {
             case EXPRESSION:
             case IDENTIFIER_DATA:
@@ -225,7 +227,7 @@ void find_variable(node_t* node, char* dest) {
         case EXPRESSION:
             handle_expression(node);
             if (strcmp(dest, "%rax")) {
-                printf("\tmovq %rax, %s\n", dest);
+                printf("\tmovq %%rax, %s\n", dest);
             }
             break;
         case IDENTIFIER_DATA:
@@ -251,7 +253,25 @@ void find_variable(node_t* node, char* dest) {
 }
 
 void handle_expression(node_t* node) {
+    if (node->n_children == 1) {
+        fprintf(stderr, "Other ålace\n");
+    }
+    if (node->n_children == 2) {
+        fprintf(stderr, "Some place\n");
+        if (node->children[1] != NULL && node->children[1]->type == EXPRESSION_LIST) {
+
+        }
+        if (node->children[1] != NULL) {
+            //fprintf(stderr, "Funcall %s %s\n", node_string[node->children[1]->type], node_string[node->children[0]->type]);
+            //fprintf(stderr, "Stuff %s %d\n", node->children[0]->data, node->children[1]->data);
+        }
+    }
+    /*if (node->n_children > 0 && node->children[0] != NULL && node->children[0]->data != NULL && !strcmp("test", node->children[0]->data)) {
+        fprintf(stderr, "Function node: %d %s %s\n", node->n_children, node_string[node->children[0]->type], node_string[node->children[1]->type]);
+        fprintf(stderr, "Child: %d\n", *((int64_t *)node->children[1]->children[0]->data));
+    }*/
     if (node->n_children == 2 && (node->children[1] == NULL || node->children[1]->type == EXPRESSION_LIST)) {
+
         handle_function_call(node); //If the expression is a function call handle that
     } else if (node->data != NULL &&
         node->n_children == 2) {
@@ -334,18 +354,8 @@ void assign_variable_value(node_t* node, char* dest) {
             printf("\tmovq %s, _%s\n", dest, node->entry->name);
             break;
         case SYM_LOCAL_VAR:
-            printf("\tmovq %s, -%d(%%rbp)\n", dest, 8 * ((int) node->entry->seq + MIN(nparms, 6) + 1));
+            printf("\tmovq %s, -%d(%%rbp)\n", dest, (int) (8 * ((int) node->entry->seq + MIN(nparms, 6) + 1)));
             break;
-    }
-}
-
-void load_variable(node_t* node, char* dest) {
-    switch(node->type) {
-        case EXPRESSION:
-        case IDENTIFIER_DATA:
-        case NUMBER_DATA:
-            find_variable(node, dest);
-        break;
     }
 }
 
@@ -368,20 +378,20 @@ void handle_if_statement(node_t* node) {
             printf("jle");
             break;
     }
-    printf("\t %s%d\n", child_count == 1 ? "END_IF" : "ELSE", current_if);
+    printf("\t %s%d\n", child_count == 1 ? "END_IF" : "ELSE", (int) current_if);
     traverse_function(node->children[1]);
-    if (child_count == 2) printf("\tjmp END_IF%d\n", current_if);
-    printf("%s%d:\n", child_count == 1 ? "END_IF" : "ELSE", current_if);
+    if (child_count == 2) printf("\tjmp END_IF%d\n", (int) current_if);
+    printf("%s%d:\n", child_count == 1 ? "END_IF" : "ELSE", (int) current_if);
     if (child_count == 2) {
         traverse_function(node->children[2]);
-        printf("END_IF%d:\n", current_if);
+        printf("END_IF%d:\n", (int) current_if);
     }
 }
 
 void handle_while_statement(node_t* node) {
     int64_t current_while = while_count;
     while_count += 1;
-    printf("WHILE%d:\n", current_while);
+    printf("WHILE%d:\n", (int) current_while);
     find_variable(node->children[0]->children[0], "%rax");
     find_variable(node->children[0]->children[1], "%rbx");
     puts("\tcmpq %rax, %rbx");
@@ -396,19 +406,19 @@ void handle_while_statement(node_t* node) {
             printf("jle");
             break;
     }
-    printf("\t DONE%d\n", current_while);
+    printf("\t DONE%d\n", (int) current_while);
     traverse_function(node->children[1]);
-    printf("\tjmp WHILE%d\n", current_while);
-    printf("DONE%d:\n", current_while);
+    printf("\tjmp WHILE%d\n", (int) current_while);
+    printf("DONE%d:\n", (int) current_while);
 }
 
 void handle_continue(node_t* node) {
-    printf("\tjmp WHILE%d\n", while_count - 1);
+    printf("\tjmp WHILE%d\n", (int) while_count - 1);
 }
 
 
 void print_str(int64_t str_num) {
-    printf("\tmovq $STR%d, %%rsi\n", str_num);
+    printf("\tmovq $STR%d, %%rsi\n", (int) str_num);
     puts("\tmovq $strout, %rdi");
     puts("\tcall printf");
 }

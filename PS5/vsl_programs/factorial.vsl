@@ -1,0 +1,18 @@
+FUNC main()
+BEGIN
+    VAR f
+    f := factorial ( 8 )
+    PRINT "The factorial value of 8 is ", f
+    RETURN 0    // Success!
+END
+
+FUNC factorial( n )
+BEGIN
+    VAR y
+    y := 0
+    IF n = 1 THEN
+        y := 1
+    ELSE
+        y := n * factorial(n - 1)
+    RETURN y
+END

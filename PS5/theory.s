@@ -1,21 +1,17 @@
-    .data
-
-fact_string: .asciz "The result of f(8) (8!) is %d!\n"
-.text
-    .global main
+.section .data
+str: .string "The result of f(8) (8!) is %d!\n"
+.global main
+.section .text
 main:
 	movq $8, %rax
 	movq $1, %rbx
-	factorial:
-		imulq %rax, %rbx
-		decq %rax
-		cmpq $1, %rax
-		jne factorial
-	movq $0, %rax
-	pushq %rax
-	lea  fact_string(%rip), %rdi
-	mov %ebx, %esi
-	xor %eax, %eax
+factorial:
+	imulq %rax, %rbx
+	decq %rax
+	cmpq $1, %rax
+	jne factorial
+
+	movq %rbx, %rsi
+	movq $str, %rdi
 	call printf
-	pop %rax
-	ret
+	exit
