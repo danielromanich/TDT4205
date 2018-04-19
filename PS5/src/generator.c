@@ -253,25 +253,7 @@ void find_variable(node_t* node, char* dest) {
 }
 
 void handle_expression(node_t* node) {
-    if (node->n_children == 1) {
-        fprintf(stderr, "Other ålace\n");
-    }
-    if (node->n_children == 2) {
-        fprintf(stderr, "Some place\n");
-        if (node->children[1] != NULL && node->children[1]->type == EXPRESSION_LIST) {
-
-        }
-        if (node->children[1] != NULL) {
-            //fprintf(stderr, "Funcall %s %s\n", node_string[node->children[1]->type], node_string[node->children[0]->type]);
-            //fprintf(stderr, "Stuff %s %d\n", node->children[0]->data, node->children[1]->data);
-        }
-    }
-    /*if (node->n_children > 0 && node->children[0] != NULL && node->children[0]->data != NULL && !strcmp("test", node->children[0]->data)) {
-        fprintf(stderr, "Function node: %d %s %s\n", node->n_children, node_string[node->children[0]->type], node_string[node->children[1]->type]);
-        fprintf(stderr, "Child: %d\n", *((int64_t *)node->children[1]->children[0]->data));
-    }*/
     if (node->n_children == 2 && (node->children[1] == NULL || node->children[1]->type == EXPRESSION_LIST)) {
-
         handle_function_call(node); //If the expression is a function call handle that
     } else if (node->data != NULL &&
         node->n_children == 2) {
